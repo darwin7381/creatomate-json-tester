@@ -1,0 +1,20 @@
+{
+  "format": "mp4",
+  "width": 1920,
+  "height": 1080,
+  "elements": [
+    {
+      "type": "composition",
+      "width": 1920,
+      "height": 1080,
+      "elements": [
+        {
+          "type": "video",
+          "source": "https://creatomate-static.s3.amazonaws.com/demo/beach.mp4",
+          "duration": 30
+        }
+      ]
+    }
+  ],
+  "duration": 30
+} 

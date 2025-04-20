@@ -1,14 +1,18 @@
 {
-  "name": "creatomate-json-tester",
+  "name": "creatomate-video-tools",
   "version": "1.0.0",
-  "description": "測試Creatomate JSON文件的工具",
+  "description": "Creatomate視頻處理與字幕工具集",
   "main": "test-json.js",
   "scripts": {
     "test": "node test-json.js",
-    "start": "node test-json.js"
+    "start": "node test-json.js",
+    "subtitle": "node scripts/create-subtitled-video.js",
+    "generate": "node scripts/generate-video.js",
+    "process": "node scripts/subtitle-processor.js"
   },
   "dependencies": {
     "creatomate": "latest",
-    "dotenv": "^16.3.1"
+    "dotenv": "^16.3.1",
+    "parse-srt": "^1.0.0-alpha"
   }
 } 

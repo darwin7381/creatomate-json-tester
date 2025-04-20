@@ -1,19 +1,95 @@
+# Creatomate JSON 測試工具與視頻自動化工具集
 
-# Creatomate JSON 測試工具
+這個工具集用於測試 Creatomate JSON 文件並自動生成帶有字幕的視頻。
 
-這個工具用於測試 Creatomate JSON 文件，確保它們可以正確渲染視頻或圖像。
+## 目錄結構
 
-### 設置
+```
+/
+├── scripts/           # 各種視頻處理腳本
+├── inputs/            # 存放 SRT 字幕文件
+├── json/              # 存放模板和輸出的 JSON 文件
+├── n8n/               # 與 n8n 整合相關的文件
+├── sample-json/       # 範例 JSON 文件
+├── test-json.js       # 測試 JSON 文件的腳本
+├── README.md          # 說明文檔
+└── .env.local         # 環境變數文件
+```
 
-1. 克隆或下載此項目
-2. 安裝依賴項：
-   ```
-   npm install
-   ```
-3. 複製或編輯 `.env.local` 文件，並填入您的 Creatomate API 密鑰：
-   ```
-   CREATOMATE_API_KEY=your_api_key_here
-   ```
+## 字幕視頻自動生成工具
+
+這個工具使用 Creatomate API 來自動生成帶有字幕的視頻。只需提供一個 SRT 格式的字幕文件，工具將自動生成一個包含字幕的視頻。
+
+### 使用方法
+
+#### 1. 安裝依賴
+
+首先，安裝必要的依賴：
+
+```bash
+npm install
+```
+
+#### 2. 設置 API 金鑰
+
+在使用前，請先設置您的 Creatomate API 金鑰：
+
+```bash
+export CREATOMATE_API_KEY=your_api_key_here
+```
+
+或者在 `.env.local` 文件中設置您的 API 金鑰：
+
+```
+CREATOMATE_API_KEY=your_api_key_here
+```
+
+#### 3. 準備字幕文件
+
+將您的 SRT 格式字幕文件放入 `inputs/` 目錄中。
+
+#### 4. 運行腳本
+
+運行腳本來生成視頻：
+
+```bash
+node scripts/create-subtitled-video.js [字幕文件路徑]
+```
+
+如果不指定字幕文件路徑，腳本將嘗試使用 `inputs/` 目錄中的第一個 `.srt` 文件。
+
+#### 5. 獲取視頻
+
+腳本運行完成後，將輸出視頻的 URL。同時，生成的 JSON 配置將保存在 `json/output-video.json` 文件中，以供參考或進一步定制。
+
+### 自定義模板
+
+您可以通過修改 `json/subtitle-template.json` 文件來自定義視頻的外觀和行為。可以調整的參數包括：
+
+- 視頻背景
+- 字幕字體、大小和顏色
+- 字幕位置
+- 視頻分辨率和持續時間
+- 其他視覺效果
+
+### 故障排除
+
+如果遇到問題，請檢查：
+
+1. API 金鑰是否正確設置
+2. 字幕文件格式是否正確（必須是標準 SRT 格式）
+3. 網絡連接是否穩定
+4. Node.js 版本是否為 v12 或更高版本
+
+### 注意事項
+
+- 生成的視頻將托管在 Creatomate 的服務器上
+- 視頻生成時間取決於視頻長度和復雜性
+- 請遵守 Creatomate 的使用條款和 API 使用限制
+
+## JSON 測試工具
+
+測試 Creatomate JSON 文件，確保它們可以正確渲染視頻或圖像。
 
 ### 使用方法
 
@@ -60,8 +136,7 @@ node test-json.js sample-json/text-overlay.json
 
 請參考 [Creatomate學習筆記.md](./Creatomate學習筆記.md) 獲取更多關於 Creatomate JSON 格式的信息。
 
-
-
+---
 
 # Creatomate Node.js Examples
 

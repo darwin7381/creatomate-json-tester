@@ -1,0 +1,18 @@
+{
+  "format": "mp4",
+  "width": 1920,
+  "height": 1080,
+  "duration": 45,
+  "elements": [
+    {
+      "type": "video",
+      "source": "https://creatomate-static.s3.amazonaws.com/demo/tunnel-drive.mp4",
+      "fit": "cover"
+    },
+    {
+      "type": "composition",
+      "track": 1,
+      "elements": []
+    }
+  ]
+} 

@@ -1,6 +1,9 @@
 /**
  * Creatomate JSON測試腳本
  * 用法: node test-json.js path/to/your/json-file.json
+ * 
+ * 範例: 
+ * node test-json.js sample-json/text-overlay.json
  */
 
 // 載入環境變數
@@ -14,6 +17,7 @@ const apiKey = process.env.CREATOMATE_API_KEY;
 
 if (!apiKey) {
   console.error('\n⚠️ 請在.env.local文件中設置您的CREATOMATE_API_KEY');
+  console.error('\n例如： CREATOMATE_API_KEY=your_api_key_here');
   process.exit(1);
 }
 
@@ -25,6 +29,10 @@ const jsonFilePath = process.argv[2];
 
 if (!jsonFilePath) {
   console.error('\n⚠️ 請提供JSON文件路徑。用法：node test-json.js path/to/your/json-file.json');
+  console.error('\n範例：');
+  console.error('- node test-json.js sample-json/text-overlay.json');
+  console.error('- node test-json.js sample-json/video-concat.json');
+  console.error('- node test-json.js json/subtitle-template.json');
   process.exit(1);
 }
 

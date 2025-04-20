@@ -1,0 +1,87 @@
+{
+  "format": "mp4",
+  "width": 1920,
+  "height": 1080,
+  "duration": 25,
+  "elements": [
+    {
+      "type": "video",
+      "source": "https://creatomate-static.s3.amazonaws.com/demo/tunnel-drive.mp4",
+      "fit": "cover",
+      "duration": 25
+    },
+    {
+      "type": "composition",
+      "track": 1,
+      "elements": []
+    },
+    {
+      "type": "subtitle",
+      "track": 10,
+      "text_align": "center",
+      "text": "這是一個美麗的海灘場景",
+      "font_family": "Noto Sans TC",
+      "font_size": 60,
+      "font_weight": "bold",
+      "stroke_color": "#000000",
+      "stroke_width": 5,
+      "x": "50%",
+      "y": "85%",
+      "width": "80%",
+      "background_color": "transparent",
+      "start": 2,
+      "duration": 4
+    },
+    {
+      "type": "subtitle",
+      "track": 10,
+      "text_align": "center",
+      "text": "我們可以看到翻滾的波浪和金色的沙灘",
+      "font_family": "Noto Sans TC",
+      "font_size": 60,
+      "font_weight": "bold",
+      "stroke_color": "#000000",
+      "stroke_width": 5,
+      "x": "50%",
+      "y": "85%",
+      "width": "80%",
+      "background_color": "transparent",
+      "start": 7,
+      "duration": 5
+    },
+    {
+      "type": "subtitle",
+      "track": 10,
+      "text_align": "center",
+      "text": "陽光照耀著清澈的藍色海水",
+      "font_family": "Noto Sans TC",
+      "font_size": 60,
+      "font_weight": "bold",
+      "stroke_color": "#000000",
+      "stroke_width": 5,
+      "x": "50%",
+      "y": "85%",
+      "width": "80%",
+      "background_color": "transparent",
+      "start": 14,
+      "duration": 5
+    },
+    {
+      "type": "subtitle",
+      "track": 10,
+      "text_align": "center",
+      "text": "感謝使用我們的視頻自動化工具!",
+      "font_family": "Noto Sans TC",
+      "font_size": 60,
+      "font_weight": "bold",
+      "stroke_color": "#000000",
+      "stroke_width": 5,
+      "x": "50%",
+      "y": "85%",
+      "width": "80%",
+      "background_color": "transparent",
+      "start": 21,
+      "duration": 4
+    }
+  ]
+}
