@@ -1,0 +1,9 @@
+{
+  "template_id": "YOUR_TEMPLATE_ID",
+  "modifications": {
+    "Title": "這是一個動態生成的標題",
+    "Text 1": "這是第一段正文內容，可以在這裡放入您的主要信息。",
+    "Text 2": "這是第二段內容，可以包含一個行動呼籲或其他重要信息。",
+    "Image": "https://example.com/your-image.jpg"
+  }
+} 

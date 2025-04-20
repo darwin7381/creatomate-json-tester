@@ -1,0 +1,14 @@
+{
+  "name": "creatomate-json-tester",
+  "version": "1.0.0",
+  "description": "測試Creatomate JSON文件的工具",
+  "main": "test-json.js",
+  "scripts": {
+    "test": "node test-json.js",
+    "start": "node test-json.js"
+  },
+  "dependencies": {
+    "creatomate": "latest",
+    "dotenv": "^16.3.1"
+  }
+} 

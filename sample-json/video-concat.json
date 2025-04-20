@@ -1,0 +1,31 @@
+{
+  "output_format": "mp4",
+  "width": 1280,
+  "height": 720,
+  "elements": [
+    {
+      "type": "video",
+      "track": 1,
+      "source": "https://creatomate-static.s3.amazonaws.com/demo/video1.mp4"
+    },
+    {
+      "type": "video",
+      "track": 1,
+      "source": "https://creatomate-static.s3.amazonaws.com/demo/video2.mp4",
+      "transition": {
+        "type": "fade",
+        "duration": "1 s"
+      }
+    },
+    {
+      "type": "video",
+      "track": 1,
+      "source": "https://creatomate-static.s3.amazonaws.com/demo/video3.mp4",
+      "transition": {
+        "type": "slide",
+        "duration": "1.5 s",
+        "direction": "180°"
+      }
+    }
+  ]
+} 

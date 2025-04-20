@@ -1,0 +1,27 @@
+{
+  "output_format": "mp4",
+  "width": 1280,
+  "height": 720,
+  "elements": [
+    {
+      "type": "video",
+      "source": "https://creatomate-static.s3.amazonaws.com/demo/video1.mp4"
+    },
+    {
+      "type": "text",
+      "text": "這是一個測試文本",
+      "x": "50%",
+      "y": "50%",
+      "width": "80%",
+      "height": "30%",
+      "x_alignment": "50%",
+      "y_alignment": "50%",
+      "font_family": "Roboto",
+      "font_weight": "700",
+      "font_size": "8 vh",
+      "fill_color": "#ffffff",
+      "shadow_color": "rgba(0,0,0,0.65)",
+      "shadow_blur": "1.6 vh"
+    }
+  ]
+} 
