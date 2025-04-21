@@ -94,7 +94,8 @@ async function generateVideo(subtitlesPath, templatePath, outputPath) {
     
     // 創建渲染任務
     const output = await client.render({
-      source: templateJson
+      source: templateJson,
+      output_format: 'mp4'
     });
     
     console.log('視頻生成成功!');

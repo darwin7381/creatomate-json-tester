@@ -64,76 +64,151 @@ client.render(options)
 
 ## 4. 從頭開始創建視頻
 
-除了使用模板外，還可以從頭開始通過 JSON 格式或 API 創建視頻：
+### 4.1 使用 Node.js API - 重要屬性命名規範
+
+**重要提示**：Creatomate API 在 JSON 中使用**下劃線命名法(snake_case)**，而不是駝峰式命名法(camelCase)！這是一個經常被忽視的重要細節。
+
+例如，正確的屬性名稱是：
+- `font_family` (而不是 fontFamily)
+- `font_size` (而不是 fontSize)
+- `line_height` (而不是 lineHeight)
+- `background_color` (而不是 backgroundColor)
+- `x_alignment` (而不是 xAlignment)
+
+忽略這個命名規範會導致屬性無法被識別，從而導致渲染效果錯誤或字幕不顯示。
 
 ```javascript
 const Creatomate = require('creatomate');
 const client = new Creatomate.Client('YOUR_API_KEY');
 
-const source = new Creatomate.Source({
+// 方法一：使用 JSON 對象直接定義源
+const source = {
+  outputFormat: 'mp4',
+  width: 1920,
+  height: 1080,
+  elements: [
+    {
+      type: 'text',
+      name: 'subtitle',  // 給元素命名是個好習慣
+      text: '你的字幕文本',
+      font_family: 'Noto Sans TC',
+      font_size: '5.5 vmin',
+      font_size_minimum: '5 vmin',
+      line_height: '126%',
+      font_weight: '700',
+      fill_color: '#FFFFFF',
+      x_alignment: '50%',
+      y: '70.3388%',
+      width: '83.1194%',
+      background_color: 'rgba(19,19,19,0.7)',
+      time: '0 s',
+      duration: '5 s'
+    }
+  ]
+};
+
+// 方法二：使用 Creatomate.Source 創建對象 (確保使用正確的下劃線命名法)
+const sourceWithAPI = new Creatomate.Source({
   outputFormat: 'mp4',
   width: 1280,
   height: 720,
   
   elements: [
-    // 視頻 1
+    // 視頻元素
     new Creatomate.Video({
-      track: 1,
-      source: 'https://example.com/video1.mp4',
+      source: 'https://example.com/video.mp4',
     }),
     
-    // 視頻 2，由於在同一軌道上，所以在視頻 1 之後播放
-    new Creatomate.Video({
-      track: 1,
-      source: 'https://example.com/video2.mp4',
-      transition: new Creatomate.Fade({ duration: 1 }),
-    }),
-    
-    // 文本疊加層
+    // 字幕元素 - 注意這裡也需要使用下劃線命名法
     new Creatomate.Text({
-      text: '你的文本覆蓋在這裡',
-      
-      // 使容器與屏幕一樣大，並添加一些間距
-      width: '100%',
-      height: '100%',
-      xPadding: '3 vmin',
-      yPadding: '8 vmin',
-      
-      // 將文本對齊到底部中心
-      xAlignment: '50%',
-      yAlignment: '100%',
-      
-      // 文本樣式
-      font: new Creatomate.Font('Aileron', 800, 'normal', '8.48 vh'),
-      shadow: new Creatomate.Shadow('rgba(0,0,0,0.65)', '1.6 vmin'),
-      fillColor: '#ffffff',
+      text: '你的字幕文本',
+      name: 'subtitle',
+      font_family: 'Noto Sans TC',
+      font_size: '5.5 vmin',
+      font_size_minimum: '5 vmin',
+      line_height: '126%',
+      font_weight: '700',
+      fill_color: '#FFFFFF',
+      x_alignment: '50%',
+      y: '70.3388%',
+      width: '83.1194%',
+      background_color: 'rgba(19,19,19,0.7)',
+      time: '0 s',
+      duration: '5 s'
     }),
   ],
 });
 
+// 渲染視頻
 client.render({ source })
-  .then((renders) => console.log('你的視頻已準備好:', renders));
+  .then((renders) => console.log('字幕視頻已準備好:', renders))
+  .catch((error) => console.error(error));
 ```
 
-## 5. JSON 格式
+### 4.2 字幕視頻示例
 
-Creatomate 使用 JSON 格式來描述如何渲染輸出文件（mp4、gif 或 jpg）。基本結構如下：
+```javascript
+const Creatomate = require('creatomate');
+const client = new Creatomate.Client('YOUR_API_KEY');
 
-```json
-{
-  "output_format": "mp4",
-  "width": 1920,
-  "height": 1080,
-  "elements": [
+// 字幕數據（通常從SRT或其他來源解析）
+const subtitles = [
+  { text: "第一行字幕", startTime: 0, endTime: 3 },
+  { text: "第二行字幕", startTime: 3, endTime: 6 },
+  // ...更多字幕
+];
+
+// 創建視頻源
+const source = {
+  outputFormat: 'mp4',
+  elements: [
+    // 背景視頻
     {
-      "type": "text",
-      "text": "我的文本",
-      "fill_color": "#ffffff",
-      "font_family": "Open Sans"
+      type: 'video',
+      source: 'https://example.com/background-video.mp4',
     }
   ]
-}
+};
+
+// 添加字幕元素
+subtitles.forEach((subtitle, index) => {
+  source.elements.push({
+    type: 'text',
+    name: 'subtitle',
+    text: subtitle.text,
+    font_family: 'Noto Sans TC',
+    font_size: '5.5 vmin',
+    font_size_minimum: '5 vmin',
+    line_height: '126%',
+    font_weight: '700',
+    fill_color: '#FFFFFF',
+    x_alignment: '50%',
+    y: '70.3388%',
+    width: '83.1194%',
+    background_color: 'rgba(19,19,19,0.7)',
+    time: `${subtitle.startTime} s`,
+    duration: `${subtitle.endTime - subtitle.startTime} s`
+  });
+});
+
+// 渲染視頻
+client.render({ source, output_format: 'mp4' })
+  .then((renders) => console.log('字幕視頻已準備好:', renders))
+  .catch((error) => console.error(error));
 ```
+
+## 5. 值得注意的單位和格式
+
+Creatomate 使用特殊的單位格式來確保跨不同分辨率的響應式設計：
+
+- **相對尺寸**：`'100%'`, `'50%'` 等
+- **視口單位**：
+  - `vw` - 視口寬度的百分比
+  - `vh` - 視口高度的百分比
+  - `vmin` - 視口寬度或高度中較小者的百分比
+  - `vmax` - 視口寬度或高度中較大者的百分比
+- **絕對單位**：`'px'` 像素
+- **時間單位**：`'2 s'` 表示2秒
 
 ## 6. 常見視頻處理操作
 
@@ -148,8 +223,7 @@ Creatomate 提供了多種視頻和圖像處理功能：
 - **渲染模板**
 - **生成 Instagram、YouTube 或 TikTok 的故事視頻**
 - **使用 ChatGPT 自動生成視頻**
-- **使用 AWS Polly 自動生成文本轉語音視頻**
-- **使用 AWS Transcribe 生成字幕**
+- **使用 AWS Polly, Transcribe 生成字幕**
 - **將圖像轉換為視頻幻燈片**
 - **模糊視頻背景**
 - **添加進度條**
@@ -161,114 +235,188 @@ Creatomate 提供了多種視頻和圖像處理功能：
 - **創建視頻牆（2x2、3x3 等）**
 - **創建分屏視頻**
 
-## 7. 與 n8n 整合
+## 7. 重要元素類型及其關鍵屬性
 
-對於與 n8n 的 HTTP 節點集成，可以通過以下方式使用 Creatomate：
+### 7.1 視頻元素 (type: 'video')
 
-1. 在 n8n 中創建 HTTP 請求節點
-2. 配置為 POST 請求，指向 `https://api.creatomate.com/v1/renders`
-3. 設置標頭：
-   - `Authorization: Bearer YOUR_API_KEY`
-   - `Content-Type: application/json`
-4. 在請求體中提供 JSON 數據（可以是模板 ID 和修改，或完整的視頻源定義）
-
-```json
+```javascript
 {
-  "template_id": "YOUR_TEMPLATE_ID",
-  "modifications": {
-    "Title": "動態生成的標題",
-    "Text 1": "動態生成的文本內容",
-    "Video": "https://example.com/your-dynamic-video.mp4"
-  }
+  type: 'video',
+  source: "https://example.com/video.mp4",  // 視頻URL
+  
+  // 如果不指定，視頻會使用其原有長度
+  // 不需要顯式設置時長
+  
+  volume: "80%",                           // 音量
+  fit: "cover",                            // 適應方式：cover填滿，contain包含
+  color_overlay: "rgba(0,0,0,0.4)",        // 顏色覆蓋層，注意使用下劃線！
 }
 ```
 
-## 8. 常見元素類型及其屬性
-
-### 8.1 視頻元素 (Video)
+### 7.2 文本元素 (type: 'text')
 
 ```javascript
-new Creatomate.Video({
-  source: "https://example.com/video.mp4",  // 視頻URL
-  track: 1,                                 // 軌道號碼
-  time: "0s",                               // 開始時間
-  duration: "5s",                           // 持續時間
-  trimStart: "2s",                          // 從源視頻的開始修剪
-  trimEnd: "2s",                            // 從源視頻的結束修剪
-  volume: "80%",                            // 音量
-  playbackRate: "1.5",                      // 播放速度
-  colorOverlay: "rgba(0,0,0,0.4)",          // 顏色疊加層
-})
+{
+  type: 'text',
+  name: 'subtitle',                       // 命名元素
+  
+  // 容器屬性
+  width: "83.1194%",                      // 寬度
+  y: "70.3388%",                          // Y位置
+  
+  // 對齊
+  x_alignment: "50%",                     // 水平對齊
+  
+  // 文本內容
+  text: "Hello World",                    // 文本內容
+  
+  // 字體設置
+  font_family: "Noto Sans TC",            // 字體名稱
+  font_size: "5.5 vmin",                  // 字體大小
+  font_size_minimum: "5 vmin",            // 最小字體大小
+  line_height: "126%",                    // 行高
+  font_weight: "700",                     // 字體粗細
+  
+  // 顏色和效果
+  fill_color: "#FFFFFF",                  // 填充顏色
+  background_color: "rgba(19,19,19,0.7)", // 背景色
+  
+  // 時間設置
+  time: "0 s",                            // 開始時間
+  duration: "5 s"                         // 持續時間
+}
 ```
 
-### 8.2 文本元素 (Text)
+### 7.3 圖像元素 (type: 'image')
 
 ```javascript
-new Creatomate.Text({
-  text: "Hello World",                      // 文本內容
-  fontFamily: "Roboto",                     // 字體
-  fontSize: "24px",                         // 字體大小
-  fontWeight: "700",                        // 字體粗細
-  fillColor: "#ffffff",                     // 填充顏色
-  shadowColor: "rgba(0,0,0,0.5)",           // 陰影顏色
-  shadowBlur: "5px",                        // 陰影模糊
-  xAlignment: "50%",                        // 水平對齊
-  yAlignment: "50%",                        // 垂直對齊
-  animations: [...]                         // 動畫
-})
-```
-
-### 8.3 圖像元素 (Image)
-
-```javascript
-new Creatomate.Image({
+{
+  type: 'image',
   source: "https://example.com/image.jpg",  // 圖像URL
   width: "50%",                             // 寬度
   height: "50%",                            // 高度
   x: "25%",                                 // X位置
-  y: "25%",                                 // Y位置
-  mask: {...},                              // 遮罩
-})
+  y: "25%"                                  // Y位置
+}
 ```
 
-## 9. 動畫和過渡效果
+## 8. 動畫和過渡效果
 
-Creatomate 提供多種動畫和過渡效果：
+Creatomate 提供多種動畫和過渡效果。使用這些效果時，同樣需要遵循下劃線命名規範：
 
-### 9.1 淡入淡出
-
-```javascript
-new Creatomate.Fade({
-  duration: "1s",
-  easing: "cubic-bezier(0.5, 0, 0.5, 1)"
-})
-```
-
-### 9.2 滑動
+### 8.1 淡入淡出
 
 ```javascript
-new Creatomate.Slide({
-  duration: "1s",
-  direction: "90°" // 從左到右
-})
-```
-
-### 9.3 關鍵幀動畫
-
-```javascript
+// 作為元素屬性
 {
-  x: [
-    { time: "0s", value: "0%" },
-    { time: "2s", value: "100%" }
-  ],
-  y: [
-    { time: "0s", value: "0%" },
-    { time: "2s", value: "100%" }
+  transition: {
+    type: 'fade',
+    duration: 1,
+    easing: "cubic-bezier(0.5, 0, 0.5, 1)"
+  }
+}
+
+// 在animations數組中
+{
+  animations: [
+    {
+      type: 'fade',
+      time: 'start',
+      duration: 1,
+      direction: 'in'
+    }
   ]
 }
 ```
 
-## 10. 後續學習資源
+### 8.2 滑動
+
+```javascript
+{
+  animations: [
+    {
+      type: 'slide',
+      time: 'start',
+      duration: 1,
+      direction: 90  // 角度：0上，90右，180下，270左
+    }
+  ]
+}
+```
+
+### 8.3 使用關鍵幀動畫
+
+```javascript
+// 使用關鍵幀設置文本
+text: [
+  { time: "0 s", value: "第一行文本" },
+  { time: "3 s", value: "第二行文本" },
+  { time: "6 s", value: "第三行文本" }
+],
+
+// 使用關鍵幀設置位置
+x: [
+  { time: "0 s", value: "0%" },
+  { time: "2 s", value: "100%" }
+]
+```
+
+## 9. 字幕視頻製作最佳實踐
+
+1. **使用合適的文本容器**：
+   ```javascript
+   {
+     type: 'text',
+     name: 'subtitle',
+     width: "83.1194%",
+     y: "70.3388%",
+     x_alignment: "50%"
+   }
+   ```
+
+2. **設置醒目的字體樣式**：
+   ```javascript
+   {
+     font_family: "Noto Sans TC", // 注意：中文字幕需要使用支持中文的字體
+     font_size: "5.5 vmin",
+     font_size_minimum: "5 vmin",
+     font_weight: "700",
+     fill_color: "#FFFFFF"
+   }
+   ```
+
+3. **使用文本背景增強可讀性**：
+   ```javascript
+   {
+     background_color: "rgba(19,19,19,0.7)"
+   }
+   ```
+
+4. **正確設置時間點**：
+   ```javascript
+   {
+     time: "0 s",       // 注意空格和單位s
+     duration: "5 s"    // 注意空格和單位s
+   }
+   ```
+
+## 10. 常見錯誤和注意事項
+
+1. **命名規範錯誤**：使用駝峰式命名法(camelCase)而不是下劃線命名法(snake_case)將導致屬性無法被識別。
+   - 錯誤: `fontFamily`, `fontSize`, `backgroundColor`
+   - 正確: `font_family`, `font_size`, `background_color`
+
+2. **單位格式錯誤**：時間單位需要包含空格和s
+   - 錯誤: `"5s"`, `5`
+   - 正確: `"5 s"`
+
+3. **漏掉必要的屬性**：某些元素需要必要的屬性才能正常顯示
+   - 字幕元素通常需要: `type`, `text`, `font_family`, `fill_color`, `time`, `duration`
+
+4. **字體選擇不當**：確保為多語言內容選擇合適的字體
+   - 中文字幕應使用: `"Noto Sans TC"`, `"Noto Sans SC"` 等支持中文的字體
+
+## 11. 後續學習資源
 
 - [官方 API 文檔](https://creatomate.com/docs/api/introduction)
 - [Node.js 示例庫](https://github.com/creatomate/node-examples)

@@ -1,0 +1,18 @@
+{
+  "output_format": "mp4",
+  "duration": 6,
+  "elements": [
+    {
+      "type": "video",
+      "source": "https://creatomate.com/files/assets/752a3508-f215-4ce6-8778-2d1f3d560e68.mp4",
+      "x": "25%",
+      "width": "50%"
+    },
+    {
+      "type": "video",
+      "source": "https://creatomate.com/files/assets/679f6f30-0172-44e5-8d09-ddc712f83b78.mp4",
+      "x": "75%",
+      "width": "50%"
+    }
+  ]
+} 

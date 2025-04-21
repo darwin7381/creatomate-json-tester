@@ -20,7 +20,7 @@ const https = require('https');
 // 獲取命令行參數
 const args = process.argv.slice(2);
 const subtitleFile = args[0] || path.join(__dirname, '../inputs/sample-subtitle.txt');
-const videoUrl = args[1] || 'https://creatomate-static.s3.amazonaws.com/demo/video1.mp4';
+const videoUrl = args[1] || 'https://creatomate.com/files/assets/752a3508-f215-4ce6-8778-2d1f3d560e68.mp4';
 
 // 獲取API密鑰
 const apiKey = process.env.CREATOMATE_API_KEY;
@@ -59,27 +59,39 @@ try {
         {
           type: "video",
           source: videoUrl
-        },
-        // 字幕元素
-        {
-          type: "text",
-          text: subtitleKeyframes,
-          width: "100%",
-          height: "100%",
-          x_padding: "3 vmin",
-          y_padding: "8 vmin",
-          x_alignment: "50%",
-          y_alignment: "100%",
-          font_family: "Noto Sans TC",
-          font_weight: "800",
-          font_size: "8.48 vh",
-          fill_color: "#ffffff",
-          shadow_color: "rgba(0,0,0,0.65)",
-          shadow_blur: "1.6 vmin"
         }
       ]
     }
   };
+  
+  // 為每個字幕創建單獨的文本元素
+  for (let i = 0; i < subtitleKeyframes.length; i += 2) {
+    if (i + 1 < subtitleKeyframes.length && subtitleKeyframes[i].value) {
+      const startTime = parseFloat(subtitleKeyframes[i].time);
+      const endTime = parseFloat(subtitleKeyframes[i+1].time);
+      const duration = endTime - startTime;
+      
+      // 只添加有內容的字幕
+      if (subtitleKeyframes[i].value.trim() !== '') {
+        requestBody.source.elements.push({
+          type: "text",
+          text: subtitleKeyframes[i].value,
+          start: startTime,
+          duration: duration,
+          x: "50%",
+          y: "85%",
+          width: "90%",
+          font_family: "Noto Sans TC",
+          font_weight: "800",
+          font_size: "4 vh",
+          fill_color: "#ffffff",
+          background_color: "rgba(0, 0, 0, 0.6)",
+          background_padding: "0.5em",
+          text_alignment: "center"
+        });
+      }
+    }
+  }
   
   // 保存處理結果
   const outputFile = path.join(__dirname, '../json/subtitle-output.json');
@@ -106,24 +118,36 @@ function parseSubtitles(subtitleText) {
   
   // 以空行分割每個字幕塊
   const subtitleBlocks = subtitleText.split('\n\n');
+  console.log(`找到 ${subtitleBlocks.length} 個字幕塊`);
   
   for (const block of subtitleBlocks) {
     if (!block.trim()) continue;
     
     const lines = block.trim().split('\n');
-    if (lines.length < 2) continue;
+    if (lines.length < 3) {
+      console.log(`跳過無效字幕塊: 行數不足 (${lines.length})`);
+      continue;
+    }
     
-    // 分析時間行
-    const timeLine = lines[0];
+    // 第一行是序號
+    const indexLine = lines[0];
+    
+    // 第二行是時間行
+    const timeLine = lines[1];
     const timeMatch = timeLine.match(/(\d{2}:\d{2}:\d{2},\d{3})\s*-->\s*(\d{2}:\d{2}:\d{2},\d{3})/);
     
-    if (!timeMatch) continue;
+    if (!timeMatch) {
+      console.log(`跳過無效字幕塊: 無法匹配時間格式 (${timeLine})`);
+      continue;
+    }
     
     const startTime = parseTimestamp(timeMatch[1]);
     const endTime = parseTimestamp(timeMatch[2]);
     
     // 獲取字幕文本（可能有多行）
-    const captionText = lines.slice(1).join('\n');
+    const captionText = lines.slice(2).join('\n');
+    
+    console.log(`解析字幕 #${indexLine}: ${startTime}s --> ${endTime}s: ${captionText.substring(0, 30)}${captionText.length > 30 ? '...' : ''}`);
     
     keyframes.push({
       time: `${startTime} s`,
@@ -137,6 +161,7 @@ function parseSubtitles(subtitleText) {
     });
   }
   
+  console.log(`總共解析了 ${keyframes.length / 2} 個字幕`);
   return keyframes;
 }
 

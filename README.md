@@ -1,3 +1,71 @@
+# Creatomate視頻工具集
+
+這個項目提供了一系列工具和腳本，用於使用Creatomate API生成和處理視頻，特別是添加字幕到視頻中。
+
+## 目錄結構
+
+- `scripts/`: 包含所有執行腳本
+  - `create-subtitled-video.js`: 主要字幕視頻生成腳本
+  - `generate-video.js`: 基本視頻生成腳本
+
+- `inputs/`: 存放輸入文件，如字幕文件(.srt)
+
+- `json/`: **重要！** 存放腳本生成的JSON結果文件，這些文件將被發送到Creatomate進行渲染
+  - 不要在此目錄中手動添加模板文件
+
+- `sample-json/`: 存放各種JSON模板文件
+  - `subtitles/`: 字幕視頻相關的模板
+    - `subtitle-template.json`: 字幕視頻的基本模板
+    - `video-template.json`: 視頻的基本模板
+
+- `n8n/`: 存放n8n工作流程相關文件
+
+## 使用方法
+
+### 生成帶字幕的視頻
+
+使用以下命令從字幕文件生成視頻：
+
+```bash
+npm run subtitle <字幕文件路徑>
+```
+
+例如：
+
+```bash
+npm run subtitle inputs/news-subtitles.srt
+```
+
+如果不指定字幕文件路徑，腳本將嘗試使用`inputs`目錄中的第一個`.srt`文件。
+
+### 生成基本視頻
+
+使用以下命令生成基本視頻：
+
+```bash
+npm run generate
+```
+
+## 注意事項
+
+1. 確保已設置Creatomate API密鑰。將`.env.example`文件複製為`.env.local`並填入您的API密鑰。
+
+2. **目錄用途說明**：
+   - `json/`目錄用於存放腳本生成的JSON結果文件，這些文件將發送到Creatomate進行渲染
+   - `sample-json/`目錄用於存放各種模板文件
+   - 請勿將模板文件放在`json/`目錄中，這會導致混淆
+
+3. 所有字幕文件應當放在`inputs/`目錄中，推薦使用`.srt`格式。
+
+4. 生成的視頻URL將在腳本執行完成後顯示在控制台中。
+
+## 依賴
+
+- Node.js v14+
+- Creatomate API
+- dotenv
+- parse-srt
+
 # Creatomate JSON 測試工具與視頻自動化工具集
 
 這個工具集用於測試 Creatomate JSON 文件並自動生成帶有字幕的視頻。

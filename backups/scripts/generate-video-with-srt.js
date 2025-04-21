@@ -60,7 +60,7 @@ template.elements = [...template.elements, ...subtitleElements];
 console.log('開始生成視頻...');
 client.render({
   source: template,
-  output_format: template.format || 'mp4',
+  output_format: 'mp4',
   output_name: outputName
 }).then(renders => {
   console.log('視頻生成成功!');

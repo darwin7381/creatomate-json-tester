@@ -1,0 +1,170 @@
+{
+  "name": "字幕與音軌合併工作流",
+  "nodes": [
+    {
+      "parameters": {
+        "filePath": "=/data/subtitles/input.srt"
+      },
+      "name": "讀取字幕文件",
+      "type": "n8n-nodes-base.readBinaryFile",
+      "typeVersion": 1,
+      "position": [
+        250,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// 讀取二進制數據並轉換為文本\nconst data = Buffer.from(items[0].binary.data, 'base64').toString('utf-8');\nreturn [\n  {\n    json: {\n      subtitle_srt: data\n    }\n  }\n];"
+      },
+      "name": "轉換為文本",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        400,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "content": "subtitle-processor-code.js的內容"
+      },
+      "name": "字幕處理節點",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        550,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "values": {
+          "audioElements": [
+            {
+              "name": "Background Music",
+              "source": "354b0f97-79b5-4440-8d53-8753af7ded0f",
+              "time": 0,
+              "volume": "50%",
+              "track": 1
+            }
+          ]
+        }
+      },
+      "name": "設置音軌",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        550,
+        450
+      ]
+    },
+    {
+      "parameters": {
+        "content": "elements-merger-code.js的內容"
+      },
+      "name": "元素合併節點",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        700,
+        370
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://api.creatomate.com/v1/renders",
+        "method": "POST",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "creatomateRequest",
+              "value": "={{ $json.creatomateRequest }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "name": "Creatomate API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        850,
+        370
+      ],
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "1",
+          "name": "Creatomate API"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "讀取字幕文件": {
+      "main": [
+        [
+          {
+            "node": "轉換為文本",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "轉換為文本": {
+      "main": [
+        [
+          {
+            "node": "字幕處理節點",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "字幕處理節點": {
+      "main": [
+        [
+          {
+            "node": "元素合併節點",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "設置音軌": {
+      "main": [
+        [
+          {
+            "node": "元素合併節點",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "元素合併節點": {
+      "main": [
+        [
+          {
+            "node": "Creatomate API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+} 

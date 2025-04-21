@@ -1,0 +1,91 @@
+{
+  "name": "字幕视频生成工作流",
+  "nodes": [
+    {
+      "parameters": {
+        "filePath": "=/data/subtitles/input.srt"
+      },
+      "name": "读取字幕文件",
+      "type": "n8n-nodes-base.readBinaryFile",
+      "typeVersion": 1,
+      "position": [
+        250,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// 使用subtitle-processor-code.js的内容\n// 读取二进制数据并转换为文本\nconst data = Buffer.from(items[0].binary.data, 'base64').toString('utf-8');\n\n// 解析字幕文件\nfunction parseSubtitles(content) {\n  // 前处理：处理各种可能的格式问题\n  \n  // 1. 检查是否是只有一行但包含\\n字符的情况\n  if (!content.includes('\\n') && content.includes('\\\\n')) {\n    // 将\\n字符序列替换为实际的换行符\n    content = content.replace(/\\\\n/g, '\\n');\n  }\n  \n  // 2. 检查是否是JSON格式的字幕\n  try {\n    if (content.trim().startsWith('{') || content.trim().startsWith('[')) {\n      const jsonData = JSON.parse(content);\n      \n      // 简单处理一下常见的字幕JSON格式\n      if (Array.isArray(jsonData)) {\n        // 可能是数组格式的字幕\n        const converted = jsonData.map((item, index) => {\n          const startTime = item.startTime || item.start || 0;\n          const endTime = item.endTime || item.end || 0;\n          const text = item.text || item.content || '';\n          \n          return `${index + 1}\\n00:00:${formatTime(startTime)} --> 00:00:${formatTime(endTime)}\\n${text}\\n`;\n        }).join('\\n');\n        \n        content = converted;\n      }\n    }\n  } catch (e) {\n    // 不是有效的JSON，继续使用原始内容\n  }\n  \n  // 3. 处理可能的字幕时间戳格式问题\n  \n  const lines = content.split('\\n');\n  const subtitles = [];\n  let i = 0;\n\n  // 跳过BOM和文件头部信息\n  while (i < lines.length && !lines[i].match(/^\\d+$/)) {\n    i++;\n  }\n\n  while (i < lines.length) {\n    // 字幕序号\n    const index = parseInt(lines[i], 10);\n    if (isNaN(index)) {\n      i++;\n      continue;\n    }\n    i++;\n\n    // 时间戳行\n    if (i >= lines.length) break;\n    const timeLine = lines[i];\n    i++;\n\n    // 解析时间范围 - 支持多种格式\n    // 标准SRT: 00:00:00,000 --> 00:00:00,000\n    // 简化格式: 0:00 --> 0:00\n    let timeMatch = timeLine.match(/(\\d+:\\d+:\\d+,\\d+)\\s*-->\\s*(\\d+:\\d+:\\d+,\\d+)/) || \n                   timeLine.match(/(\\d+:\\d+:\\d+\\.\\d+)\\s*-->\\s*(\\d+:\\d+:\\d+\\.\\d+)/) ||\n                   timeLine.match(/(\\d+:\\d+)\\s*-->\\s*(\\d+:\\d+)/);\n    \n    if (!timeMatch) continue;\n\n    let startTime = timeMatch[1];\n    let endTime = timeMatch[2];\n    \n    // 统一格式\n    startTime = startTime.replace(',', '.');\n    endTime = endTime.replace(',', '.');\n    \n    // 补充完整时间格式\n    if (!startTime.includes(':')) {\n      startTime = `00:00:${startTime}`;\n    } else if (startTime.split(':').length === 2) {\n      startTime = `00:${startTime}`;\n    }\n    \n    if (!endTime.includes(':')) {\n      endTime = `00:00:${endTime}`;\n    } else if (endTime.split(':').length === 2) {\n      endTime = `00:${endTime}`;\n    }\n\n    // 字幕文本 (可能有多行)\n    let text = '';\n    while (i < lines.length && lines[i].trim() !== '') {\n      text += (text ? '\\n' : '') + lines[i];\n      i++;\n    }\n\n    // 计算时间（秒）\n    const startSeconds = parseTimeToSeconds(startTime);\n    const endSeconds = parseTimeToSeconds(endTime);\n    const duration = endSeconds - startSeconds;\n\n    subtitles.push({\n      index,\n      start: startSeconds,\n      end: endSeconds,\n      duration,\n      text: text.trim()\n    });\n\n    // 跳过空行\n    i++;\n  }\n\n  return subtitles;\n}\n\n/**\n * 格式化时间为 00.000 格式\n * @param {number} seconds \n * @returns {string}\n */\nfunction formatTime(seconds) {\n  const wholeSec = Math.floor(seconds);\n  const ms = Math.floor((seconds - wholeSec) * 1000);\n  return `${wholeSec.toString().padStart(2, '0')}.${ms.toString().padStart(3, '0')}`;\n}\n\n/**\n * 将时间字符串转换为秒数\n * @param {string} timeStr 时间字符串 (格式: HH:MM:SS.mmm)\n * @returns {number} 秒数\n */\nfunction parseTimeToSeconds(timeStr) {\n  const parts = timeStr.split(':');\n  const seconds = parseFloat(parts[2]);\n  const minutes = parseInt(parts[1], 10);\n  const hours = parseInt(parts[0], 10);\n  \n  return hours * 3600 + minutes * 60 + seconds;\n}\n\n// 主处理流程\ntry {\n  // 获取输入的字幕内容\n  const subtitleContent = data;\n  \n  if (!subtitleContent) {\n    throw new Error('未提供字幕内容');\n  }\n  \n  // 解析字幕\n  const subtitles = parseSubtitles(subtitleContent);\n  \n  if (subtitles.length === 0) {\n    throw new Error('未找到有效字幕');\n  }\n  \n  // 计算视频总时长 (最后一个字幕的结束时间)\n  const totalDuration = Math.ceil(subtitles[subtitles.length - 1].end);\n  \n  // 构建渲染源定义\n  const source = {\n    outputFormat: 'mp4',\n    width: 1920,\n    height: 1080,\n    fillColor: '#262626',\n    elements: [\n      // 背景视频\n      {\n        type: 'video',\n        source: 'https://creatomate.com/files/assets/c16f42db-7b5b-4ab7-9625-bc869fae623d.mp4',\n        fit: 'cover'\n      }\n    ]\n  };\n  \n  // 添加字幕元素\n  subtitles.forEach((subtitle) => {\n    source.elements.push({\n      type: 'text',\n      name: 'subtitle',\n      text: subtitle.text,\n      font_family: 'Noto Sans TC',\n      font_size: '5.5 vmin',\n      font_size_minimum: '5 vmin',\n      line_height: '126%',\n      font_weight: '700',\n      fill_color: '#FFFFFF',\n      x_alignment: '50%',\n      y: '70.3388%',\n      width: '83.1194%',\n      background_color: 'rgba(19,19,19,0.7)',\n      time: `${subtitle.start} s`,\n      duration: `${subtitle.duration} s`\n    });\n  });\n  \n  // 准备输出数据\n  const outputData = {\n    source: source,\n    output_format: 'mp4'\n  };\n  \n  // 返回处理结果\n  return [{\n    json: {\n      creatomateRequest: outputData,\n      subtitlesCount: subtitles.length,\n      videoDuration: totalDuration,\n    }\n  }];\n  \n} catch (error) {\n  // 处理错误\n  return [{\n    json: {\n      error: true,\n      message: `处理字幕时出错: ${error.message}`,\n      stack: error.stack\n    }\n  }];\n}"
+      },
+      "name": "处理字幕文件",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        500,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://api.creatomate.com/v1/renders",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "creatomateRequest",
+              "value": "={{ $json.creatomateRequest }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "name": "Creatomate API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        750,
+        300
+      ],
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "1",
+          "name": "Creatomate API"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "读取字幕文件": {
+      "main": [
+        [
+          {
+            "node": "处理字幕文件",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "处理字幕文件": {
+      "main": [
+        [
+          {
+            "node": "Creatomate API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+} 

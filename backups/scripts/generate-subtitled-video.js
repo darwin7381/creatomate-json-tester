@@ -79,17 +79,27 @@ async function generateSubtitledVideo() {
     
     // 使用Creatomate API生成視頻
     console.log('正在生成視頻，請稍候...');
-    const render = await client.render({
-      source: fullTemplate
+    const renders = await client.render({
+      source: fullTemplate,
+      output_format: 'mp4'
     });
     
     console.log('視頻生成完成!');
-    console.log(`視頻URL: ${render.url}`);
-    console.log(`視頻ID: ${render.id}`);
+    
+    // 處理結果對象
+    if (Array.isArray(renders) && renders.length > 0) {
+      console.log(`視頻URL: ${renders[0].url}`);
+      console.log(`視頻ID: ${renders[0].id}`);
+    } else if (renders && renders.url) {
+      console.log(`視頻URL: ${renders.url}`);
+      console.log(`視頻ID: ${renders.id}`);
+    } else {
+      console.log('無法獲取視頻URL和ID，請檢查返回的結果');
+    }
     
     // 保存渲染結果
     const renderOutputPath = path.join(__dirname, `../json/${outputName}-render-result.json`);
-    fs.writeFileSync(renderOutputPath, JSON.stringify(render, null, 2));
+    fs.writeFileSync(renderOutputPath, JSON.stringify(renders, null, 2));
     console.log(`已保存渲染結果到: ${renderOutputPath}`);
     
   } catch (error) {
