@@ -1,0 +1,24 @@
+[
+  {
+    "type": "text",
+    "name": "Text-H3M",
+    "text": "川普警告中日",
+    "time": 0,
+    "x": "5.0006%",
+    "y": "11%",
+    "width": "89.9988%",
+    "x_alignment": "50%",
+    "font_family": "Noto Sans TC",
+    "font_weight": "900",
+    "font_size_minimum": "7 vmin",
+    "font_size_maximum": "11 vmin",
+    "fill_color": "#ffffff"
+  },
+  {
+    "type": "audio",
+    "name": "Audio-P49",
+    "track": 8,
+    "time": 1.773,
+    "source": "354b0f97-79b5-4440-8d53-8753af7ded0f"
+  }
+] 

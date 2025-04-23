@@ -1,0 +1,39 @@
+[
+  {
+    "id": "577145ff-415d-4f03-a2b0-4d0857695a7c",
+    "name": "Text-H3M",
+    "type": "text",
+    "track": 6,
+    "time": 0,
+    "x": "5.0006%",
+    "y": "11%",
+    "width": "89.9988%",
+    "x_anchor": "0%",
+    "y_anchor": "0%",
+    "x_alignment": "50%",
+    "text": "川普警告中日",
+    "font_family": "Noto Sans TC",
+    "font_weight": "900",
+    "font_size_minimum": "7 vmin",
+    "font_size_maximum": "11 vmin",
+    "line_height": "100%",
+    "fill_color": "#ffffff"
+  },
+  {
+    "id": "aa9a1fb7-c6d3-4cca-bb3d-17a16d431099",
+    "name": "Audio-K6J",
+    "type": "audio",
+    "track": 7,
+    "time": 0,
+    "source": "ad85b81f-f92d-496b-8a16-689e1dabbd3c",
+    "volume": "50%"
+  },
+  {
+    "id": "7b00137d-018f-47d8-8343-063e8a640972",
+    "name": "Audio-P49",
+    "type": "audio",
+    "track": 8,
+    "time": 1.773,
+    "source": "354b0f97-79b5-4440-8d53-8753af7ded0f"
+  }
+] 

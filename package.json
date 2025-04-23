@@ -10,8 +10,12 @@
     "generate": "node scripts/generate-video.js"
   },
   "dependencies": {
+    "@creatomate/preview": "^1.6.0",
     "creatomate": "latest",
     "dotenv": "^16.3.1",
-    "parse-srt": "^1.0.0-alpha"
+    "next": "^15.3.1",
+    "parse-srt": "^1.0.0-alpha",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
   }
-} 
+}
