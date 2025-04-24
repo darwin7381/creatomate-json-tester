@@ -118,6 +118,7 @@
   resize: vertical;
   margin-bottom: 15px;
   transition: opacity 0.2s ease;
+  min-height: 500px;
 }
 
 /* 處理載入中的交互狀態 */

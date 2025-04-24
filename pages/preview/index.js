@@ -268,7 +268,7 @@ export default function PreviewPage() {
             onMouseUp={handleTextareaSelect}
             onBlur={handleTextareaSelect}
             placeholder="請在此輸入JSON腳本或使用「載入示例」按鈕"
-            rows={15}
+            rows={25}
             className={styles.jsonTextarea}
             spellCheck={false}
           />
