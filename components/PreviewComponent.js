@@ -7,12 +7,43 @@ export default function PreviewComponent({ jsonInput, filePath, onError, onLoadi
   const [isInitialized, setIsInitialized] = useState(false);
   const debounceTimeoutRef = useRef(null);
   const previousJsonInputRef = useRef('');
+  const processingRef = useRef(false);
+  const pendingUpdateRef = useRef(null);
+  
+  // 分離更新到獨立時間片段，避免阻塞主線程
+  const scheduleUpdate = (callback) => {
+    return new Promise(resolve => {
+      if (typeof window !== 'undefined') {
+        // 使用 setTimeout 嵌套在 requestAnimationFrame 中，進一步減少對主線程的佔用
+        window.requestAnimationFrame(() => {
+          // 用 0ms 延遲來釋放主線程，允許輸入處理
+          setTimeout(() => {
+            try {
+              const result = callback();
+              resolve(result);
+            } catch (err) {
+              console.error('執行更新時出錯:', err);
+              resolve(null);
+            }
+          }, 0);
+        });
+      } else {
+        try {
+          const result = callback();
+          resolve(result);
+        } catch (err) {
+          console.error('執行更新時出錯:', err);
+          resolve(null);
+        }
+      }
+    });
+  };
 
   // 初始化預覽SDK
   useEffect(() => {
     if (!containerRef.current) return;
 
-    const setupPreview = () => {
+    const setupPreview = async () => {
       try {
         // 清理先前的實例
         if (previewRef.current) {
@@ -48,6 +79,7 @@ export default function PreviewComponent({ jsonInput, filePath, onError, onLoadi
 
         preview.onError = (err) => {
           console.error('預覽SDK錯誤:', err);
+          processingRef.current = false;
           if (onError) {
             // 如果是CORS錯誤或視頻載入錯誤，提供更友好的錯誤信息
             if (err.includes('CORS') || err.includes('video') || err.includes('load')) {
@@ -60,17 +92,23 @@ export default function PreviewComponent({ jsonInput, filePath, onError, onLoadi
         };
 
         preview.onLoad = () => {
+          processingRef.current = true;
           if (onLoadingChange) onLoadingChange(true);
         };
 
         preview.onLoadComplete = () => {
-          if (onLoadingChange) onLoadingChange(false);
+          // 延遲標記處理完成，確保UI更新後再處理新的輸入
+          setTimeout(() => {
+            processingRef.current = false;
+            if (onLoadingChange) onLoadingChange(false);
+          }, 50);
         };
 
         previewRef.current = preview;
       } catch (err) {
         console.error('設置預覽時出錯:', err);
         if (onError) onError(`設置預覽時出錯: ${err.message}`);
+        processingRef.current = false;
         if (onLoadingChange) onLoadingChange(false);
       }
     };
@@ -79,12 +117,15 @@ export default function PreviewComponent({ jsonInput, filePath, onError, onLoadi
 
     // 清理函數
     return () => {
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
+      }
+      if (pendingUpdateRef.current) {
+        clearTimeout(pendingUpdateRef.current);
+      }
       if (previewRef.current) {
         previewRef.current.dispose();
         previewRef.current = null;
-      }
-      if (debounceTimeoutRef.current) {
-        clearTimeout(debounceTimeoutRef.current);
       }
     };
   }, []);
@@ -92,8 +133,9 @@ export default function PreviewComponent({ jsonInput, filePath, onError, onLoadi
   // 處理從文件加載的JSON
   useEffect(() => {
     const loadJsonFile = async () => {
-      if (!previewRef.current || !isInitialized || !filePath) return;
+      if (!previewRef.current || !isInitialized || !filePath || processingRef.current) return;
 
+      processingRef.current = true;
       try {
         if (onLoadingChange) onLoadingChange(true);
         
@@ -108,7 +150,15 @@ export default function PreviewComponent({ jsonInput, filePath, onError, onLoadi
         if (data.content && previewRef.current) {
           try {
             const jsonSource = JSON.parse(data.content);
-            await previewRef.current.setSource(jsonSource);
+            
+            // 使用非阻塞方式應用JSON
+            await scheduleUpdate(() => {
+              if (!previewRef.current) return null;
+              return previewRef.current.setSource(jsonSource).catch(err => {
+                console.error('應用JSON時出錯:', err);
+                if (onError) onError(`無法應用JSON: ${err.message}`);
+              });
+            });
           } catch (err) {
             if (onError) onError(`無法應用JSON: ${err.message}`);
           }
@@ -119,7 +169,11 @@ export default function PreviewComponent({ jsonInput, filePath, onError, onLoadi
         console.error('載入JSON文件失敗:', err);
         if (onError) onError(`載入JSON文件失敗: ${err.message}`);
       } finally {
-        if (onLoadingChange) onLoadingChange(false);
+        // 延遲重置處理標誌，讓UI有時間響應
+        setTimeout(() => {
+          processingRef.current = false;
+          if (onLoadingChange) onLoadingChange(false);
+        }, 50);
       }
     };
 
@@ -128,47 +182,89 @@ export default function PreviewComponent({ jsonInput, filePath, onError, onLoadi
 
   // 使用防抖處理JSON輸入更新
   useEffect(() => {
+    // 清除現有的更新計劃
+    if (pendingUpdateRef.current) {
+      clearTimeout(pendingUpdateRef.current);
+      pendingUpdateRef.current = null;
+    }
+    
     if (!isInitialized || !jsonInput) return;
     
     // 避免處理相同的輸入
     if (jsonInput === previousJsonInputRef.current) return;
     previousJsonInputRef.current = jsonInput;
     
+    // 避免在處理中重複觸發更新
+    if (processingRef.current) {
+      // 如果正在處理，計劃稍後再嘗試
+      pendingUpdateRef.current = setTimeout(() => {
+        // 重新觸發效果而不更新依賴項
+        const currentInput = jsonInput;
+        setImmediate(() => {
+          if (currentInput === jsonInput) {
+            previousJsonInputRef.current = '';
+          }
+        });
+      }, 1000);
+      return;
+    }
+    
     // 清除現有的超時
     if (debounceTimeoutRef.current) {
       clearTimeout(debounceTimeoutRef.current);
     }
     
-    // 使用防抖處理更新，等待用戶停止輸入500毫秒後再處理
-    debounceTimeoutRef.current = setTimeout(async () => {
+    // 使用更長的防抖延遲，確保用戶完成輸入
+    debounceTimeoutRef.current = setTimeout(() => {
       try {
-        if (onLoadingChange) onLoadingChange(true);
-        if (onError) onError(''); // 清除先前的錯誤
+        let jsonSource;
         
         try {
-          // 檢查是否為有效的JSON
-          const jsonSource = JSON.parse(jsonInput);
+          // 驗證JSON格式，但不應用
+          jsonSource = JSON.parse(jsonInput);
           
-          // 確保JSON包含必要的元素
-          if (!jsonSource.elements || !Array.isArray(jsonSource.elements)) {
-            if (onError) onError('JSON缺少elements數組或格式不正確');
+          // 簡單檢查是否為有效物件
+          if (!jsonSource || typeof jsonSource !== 'object') {
+            if (onError) onError('JSON格式不正確，請確保提供有效的對象');
             return;
           }
-          
-          await previewRef.current.setSource(jsonSource);
         } catch (parseError) {
-          // 如果是JSON解析錯誤，提供友好的錯誤訊息但不阻止其他操作
           console.error('JSON解析錯誤:', parseError);
           if (onError) onError(`JSON格式錯誤: ${parseError.message}`);
-          // 不要在這裡返回，讓用戶繼續編輯
+          return;
         }
+        
+        if (!previewRef.current) return;
+        
+        // 標記正在處理
+        processingRef.current = true;
+        if (onLoadingChange) onLoadingChange(true);
+        if (onError) onError(''); // 清除錯誤
+        
+        // 使用非阻塞方式設置源
+        scheduleUpdate(async () => {
+          if (!previewRef.current) return;
+          
+          try {
+            await previewRef.current.setSource(jsonSource);
+          } catch (err) {
+            console.error('應用JSON時出錯:', err);
+            if (onError) onError(`應用JSON時出錯: ${err.message}`);
+          } finally {
+            // 延遲重置處理標誌，讓UI有時間響應
+            setTimeout(() => {
+              processingRef.current = false;
+              if (onLoadingChange) onLoadingChange(false);
+            }, 50);
+          }
+        });
       } catch (err) {
-        console.error('應用JSON時出錯:', err);
-        if (onError) onError(`應用JSON時出錯: ${err.message}`);
-      } finally {
+        console.error('處理JSON輸入時出錯:', err);
+        if (onError) onError(`處理JSON時出錯: ${err.message}`);
+        processingRef.current = false;
         if (onLoadingChange) onLoadingChange(false);
       }
-    }, 500);
+    }, 1000); // 使用更長的防抖時間，確保用戶完成輸入
     
   }, [jsonInput, isInitialized]);
 

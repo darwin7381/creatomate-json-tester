@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import styles from '../../styles/Preview.module.css';
@@ -19,6 +19,40 @@ export default function PreviewPage() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
   const errorTimeoutRef = useRef(null);
+  const textareaRef = useRef(null);
+  const cursorPositionRef = useRef({ start: 0, end: 0 });
+  const updatePendingRef = useRef(false);
+  
+  // 使用記憶化的回調函數來處理錯誤，避免不必要的重新渲染
+  const handleError = useCallback((message) => {
+    if (!message) {
+      setError('');
+      return;
+    }
+    
+    setError(message);
+    
+    // 清除先前的超時
+    if (errorTimeoutRef.current) {
+      clearTimeout(errorTimeoutRef.current);
+    }
+    
+    // 檢查是否為嚴重錯誤（載入失敗、初始化失敗等），只自動清除非嚴重錯誤
+    const isCriticalError = message.includes('載入失敗') || 
+                           message.includes('初始化') || 
+                           message.includes('HTTP錯誤');
+    
+    if (!isCriticalError) {
+      errorTimeoutRef.current = setTimeout(() => {
+        setError('');
+      }, 5000);
+    }
+  }, []);
+  
+  // 處理加載狀態變化，避免影響輸入
+  const handleLoadingChange = useCallback((loading) => {
+    setIsLoading(loading);
+  }, []);
 
   // 載入可用的JSON文件列表
   useEffect(() => {
@@ -45,33 +79,17 @@ export default function PreviewPage() {
         clearTimeout(errorTimeoutRef.current);
       }
     };
-  }, []);
+  }, [handleError]);
 
-  // 處理錯誤顯示，自動在5秒後清除非嚴重錯誤
-  const handleError = (message) => {
-    if (!message) {
-      setError('');
-      return;
+  // 恢復光標位置
+  useEffect(() => {
+    if (updatePendingRef.current && textareaRef.current) {
+      const { start, end } = cursorPositionRef.current;
+      textareaRef.current.focus();
+      textareaRef.current.setSelectionRange(start, end);
+      updatePendingRef.current = false;
     }
-    
-    setError(message);
-    
-    // 清除先前的超時
-    if (errorTimeoutRef.current) {
-      clearTimeout(errorTimeoutRef.current);
-    }
-    
-    // 檢查是否為嚴重錯誤（載入失敗、初始化失敗等），只自動清除非嚴重錯誤
-    const isCriticalError = message.includes('載入失敗') || 
-                           message.includes('初始化') || 
-                           message.includes('HTTP錯誤');
-    
-    if (!isCriticalError) {
-      errorTimeoutRef.current = setTimeout(() => {
-        setError('');
-      }, 5000);
-    }
-  };
+  });
 
   // 處理點擊下拉選單外部關閉下拉選單
   useEffect(() => {
@@ -168,6 +186,30 @@ export default function PreviewPage() {
     setJsonInput(JSON.stringify(exampleJson, null, 2));
     setError(''); // 清除錯誤
   };
+  
+  // 處理文本輸入，保留光標位置
+  const handleTextareaChange = (e) => {
+    if (!textareaRef.current) return;
+    
+    // 儲存當前光標位置
+    const { selectionStart, selectionEnd } = textareaRef.current;
+    cursorPositionRef.current = { start: selectionStart, end: selectionEnd };
+    
+    // 標記需要更新
+    updatePendingRef.current = true;
+    
+    // 更新文本狀態
+    setJsonInput(e.target.value);
+  };
+
+  // 處理 textarea 的鼠標點擊、鍵盤操作等事件
+  const handleTextareaSelect = () => {
+    if (!textareaRef.current) return;
+    
+    // 保存當前光標位置
+    const { selectionStart, selectionEnd } = textareaRef.current;
+    cursorPositionRef.current = { start: selectionStart, end: selectionEnd };
+  };
 
   return (
     <div className={styles.container}>
@@ -219,11 +261,16 @@ export default function PreviewPage() {
             </div>
           </div>
           <textarea 
+            ref={textareaRef}
             value={jsonInput}
-            onChange={(e) => setJsonInput(e.target.value)}
+            onChange={handleTextareaChange}
+            onKeyDown={handleTextareaSelect}
+            onMouseUp={handleTextareaSelect}
+            onBlur={handleTextareaSelect}
             placeholder="請在此輸入JSON腳本或使用「載入示例」按鈕"
             rows={15}
             className={styles.jsonTextarea}
+            spellCheck={false}
           />
           
           {error && <div className={styles.error}>{error}</div>}
@@ -236,7 +283,7 @@ export default function PreviewPage() {
               jsonInput={jsonInput}
               filePath={router.query.file}
               onError={handleError}
-              onLoadingChange={(loading) => setIsLoading(loading)}
+              onLoadingChange={handleLoadingChange}
             />
             
             {isLoading && (
