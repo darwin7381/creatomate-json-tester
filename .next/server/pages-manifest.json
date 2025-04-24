@@ -1,8 +1,0 @@
-{
-  "/_app": "pages/_app.js",
-  "/_error": "pages/_error.js",
-  "/_document": "pages/_document.js",
-  "/preview": "pages/preview.js",
-  "/api/load-json-file": "pages/api/load-json-file.js",
-  "/api/list-json-files": "pages/api/list-json-files.js"
-}

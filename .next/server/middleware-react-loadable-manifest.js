@@ -1,1 +1,0 @@
-self.__REACT_LOADABLE_MANIFEST="{\"pages/preview/index.js -> ../../components/PreviewComponent\":{\"id\":\"pages/preview/index.js -> ../../components/PreviewComponent\",\"files\":[\"static/chunks/_pages-dir-browser_components_PreviewComponent_js.js\"]}}"
