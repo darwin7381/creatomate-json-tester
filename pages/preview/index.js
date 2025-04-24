@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import styles from '../../styles/Preview.module.css';
 import dynamic from 'next/dynamic';
+import Head from 'next/head';
 
 // 動態導入 Preview 組件以避免服務端渲染問題
 const PreviewComponent = dynamic(() => import('../../components/PreviewComponent'), {
@@ -22,6 +23,8 @@ export default function PreviewPage() {
   const textareaRef = useRef(null);
   const cursorPositionRef = useRef({ start: 0, end: 0 });
   const updatePendingRef = useRef(false);
+  const [previewSource, setPreviewSource] = useState(null);
+  const [isPreviewLoading, setIsPreviewLoading] = useState(false);
   
   // 使用記憶化的回調函數來處理錯誤，避免不必要的重新渲染
   const handleError = useCallback((message) => {
@@ -153,7 +156,7 @@ export default function PreviewPage() {
     }
   };
 
-  // 設置示例JSON
+  // 載入示例JSON
   const setExampleJson = () => {
     const exampleJson = {
       output_format: 'mp4',
@@ -211,15 +214,41 @@ export default function PreviewPage() {
     cursorPositionRef.current = { start: selectionStart, end: selectionEnd };
   };
 
+  // 複製API JSON到剪貼板的函數
+  const copyApiJson = () => {
+    try {
+      // 確保jsonInput是有效的JSON
+      const jsonObj = JSON.parse(jsonInput);
+      // 構建API JSON格式
+      const apiJson = JSON.stringify({ source: jsonObj }, null, 2);
+      // 複製到剪貼板
+      navigator.clipboard.writeText(apiJson)
+        .then(() => {
+          handleError('API JSON 已成功複製到剪貼板');
+        })
+        .catch(err => {
+          handleError(`複製失敗: ${err.message}`);
+        });
+    } catch (err) {
+      handleError(`JSON 格式無效，無法複製: ${err.message}`);
+    }
+  };
+
   return (
     <div className={styles.container}>
+      <Head>
+        <title>預覽 - Creatomate</title>
+      </Head>
       <div className={styles.header}>
         <Link href="/" className={styles.backLink}>
-          &larr; 返回首頁
+          ← 返回範例
         </Link>
-        <h1 className={styles.title}>Creatomate 視頻預覽</h1>
+        <Link href="/json-browser" className={styles.browseLink}>
+          瀏覽所有JSON →
+        </Link>
       </div>
-      
+      <h1 className={styles.title}>預覽視頻</h1>
+
       <div className={styles.controls}>
         <div className={styles.jsonInput}>
           <h2>JSON 腳本</h2>
@@ -259,6 +288,13 @@ export default function PreviewPage() {
                 </div>
               )}
             </div>
+            <button 
+              className={styles.copyApiButton} 
+              onClick={copyApiJson}
+              style={{ marginLeft: 'auto' }}
+            >
+              複製 API Json
+            </button>
           </div>
           <textarea 
             ref={textareaRef}
