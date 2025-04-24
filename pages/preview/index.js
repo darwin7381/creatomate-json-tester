@@ -15,6 +15,7 @@ export default function PreviewPage() {
   const router = useRouter();
   const [jsonInput, setJsonInput] = useState('');
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [jsonFiles, setJsonFiles] = useState([]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -34,6 +35,7 @@ export default function PreviewPage() {
     }
     
     setError(message);
+    setSuccess(''); // 清除成功訊息
     
     // 清除先前的超時
     if (errorTimeoutRef.current) {
@@ -50,6 +52,27 @@ export default function PreviewPage() {
         setError('');
       }, 5000);
     }
+  }, []);
+  
+  // 處理成功訊息
+  const handleSuccess = useCallback((message) => {
+    if (!message) {
+      setSuccess('');
+      return;
+    }
+    
+    setSuccess(message);
+    setError(''); // 清除錯誤訊息
+    
+    // 清除先前的超時
+    if (errorTimeoutRef.current) {
+      clearTimeout(errorTimeoutRef.current);
+    }
+    
+    // 設置自動清除超時
+    errorTimeoutRef.current = setTimeout(() => {
+      setSuccess('');
+    }, 5000);
   }, []);
   
   // 處理加載狀態變化，避免影響輸入
@@ -224,7 +247,7 @@ export default function PreviewPage() {
       // 複製到剪貼板
       navigator.clipboard.writeText(apiJson)
         .then(() => {
-          handleError('API JSON 已成功複製到剪貼板');
+          handleSuccess('API JSON 已成功複製到剪貼板');
         })
         .catch(err => {
           handleError(`複製失敗: ${err.message}`);
@@ -310,6 +333,7 @@ export default function PreviewPage() {
           />
           
           {error && <div className={styles.error}>{error}</div>}
+          {success && <div className={styles.success}>{success}</div>}
         </div>
         
         <div className={styles.previewContainer}>
