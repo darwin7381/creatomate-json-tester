@@ -31,24 +31,80 @@
 
 .inputActions {
   display: flex;
-  gap: 10px;
   margin-bottom: 10px;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .inputActions button,
 .fileUpload {
-  background-color: #f0f0f0;
-  border: 1px solid #ccc;
-  padding: 8px 12px;
+  padding: 8px 16px;
+  background-color: #4a90e2;
+  color: white;
+  border: none;
   border-radius: 4px;
   cursor: pointer;
   font-size: 14px;
-  transition: background-color 0.2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .inputActions button:hover,
 .fileUpload:hover {
-  background-color: #e0e0e0;
+  background-color: #3a70b2;
+}
+
+/* 下拉選單樣式 */
+.dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdownButton {
+  padding: 8px 16px;
+  background-color: #4a90e2;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dropdownButton:hover {
+  background-color: #3a70b2;
+}
+
+.dropdownContent {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 10;
+  min-width: 200px;
+  max-height: 300px;
+  overflow-y: auto;
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.dropdownItem {
+  padding: 10px;
+  cursor: pointer;
+  color: #333;
+  border-bottom: 1px solid #f1f1f1;
+}
+
+.dropdownItem:last-child {
+  border-bottom: none;
+}
+
+.dropdownItem:hover {
+  background-color: #f8f8f8;
 }
 
 .jsonTextarea {

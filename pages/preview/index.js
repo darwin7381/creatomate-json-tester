@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import styles from '../../styles/Preview.module.css';
@@ -15,6 +15,43 @@ export default function PreviewPage() {
   const [jsonInput, setJsonInput] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [jsonFiles, setJsonFiles] = useState([]);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  // 載入可用的JSON文件列表
+  useEffect(() => {
+    async function fetchJsonFiles() {
+      try {
+        const response = await fetch('/api/list-json-files');
+        
+        if (!response.ok) {
+          throw new Error(`HTTP錯誤 ${response.status}`);
+        }
+        
+        const data = await response.json();
+        setJsonFiles(data.files || []);
+      } catch (err) {
+        setError(`載入JSON文件列表失敗: ${err.message}`);
+      }
+    }
+
+    fetchJsonFiles();
+  }, []);
+
+  // 處理點擊下拉選單外部關閉下拉選單
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsDropdownOpen(false);
+      }
+    }
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   // 從文件載入JSON
   const handleFileUpload = (event) => {
@@ -33,6 +70,33 @@ export default function PreviewPage() {
       }
     };
     reader.readAsText(file);
+  };
+
+  // 從服務器加載JSON文件
+  const handleLoadJsonFile = async (filePath) => {
+    try {
+      setIsLoading(true);
+      
+      const response = await fetch(`/api/load-json-file?filePath=${encodeURIComponent(filePath)}`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP錯誤 ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      if (data.content) {
+        setJsonInput(data.content);
+      } else if (data.error) {
+        setError(`載入JSON錯誤: ${data.error}`);
+      }
+      
+      setIsDropdownOpen(false);
+    } catch (err) {
+      setError(`載入JSON文件失敗: ${err.message}`);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // 設置示例JSON
@@ -75,9 +139,6 @@ export default function PreviewPage() {
           &larr; 返回首頁
         </Link>
         <h1 className={styles.title}>Creatomate 視頻預覽</h1>
-        <Link href="/preview/json" className={styles.jsonLink}>
-          瀏覽JSON文件 &rarr;
-        </Link>
       </div>
       
       <div className={styles.controls}>
@@ -94,9 +155,31 @@ export default function PreviewPage() {
                 hidden 
               />
             </label>
-            <Link href="/preview/json" className={styles.browseLink}>
-              瀏覽所有JSON
-            </Link>
+            <div className={styles.dropdown} ref={dropdownRef}>
+              <button 
+                className={styles.dropdownButton} 
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              >
+                瀏覽所有JSON {isDropdownOpen ? '▲' : '▼'}
+              </button>
+              {isDropdownOpen && (
+                <div className={styles.dropdownContent}>
+                  {jsonFiles.length === 0 ? (
+                    <div className={styles.dropdownItem}>沒有找到JSON文件</div>
+                  ) : (
+                    jsonFiles.map((file) => (
+                      <div 
+                        key={file.path} 
+                        className={styles.dropdownItem}
+                        onClick={() => handleLoadJsonFile(file.path)}
+                      >
+                        {file.name}
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
           </div>
           <textarea 
             value={jsonInput}
