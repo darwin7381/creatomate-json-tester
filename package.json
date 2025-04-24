@@ -7,7 +7,8 @@
     "test": "node test-json.js",
     "start": "node test-json.js",
     "subtitle": "node scripts/create-subtitled-video.js",
-    "generate": "node scripts/generate-video.js"
+    "generate": "node scripts/generate-video.js",
+    "dev": "next dev"
   },
   "dependencies": {
     "@creatomate/preview": "^1.6.0",
