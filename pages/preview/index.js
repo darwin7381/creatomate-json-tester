@@ -18,6 +18,7 @@ export default function PreviewPage() {
   const [jsonFiles, setJsonFiles] = useState([]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
+  const errorTimeoutRef = useRef(null);
 
   // 載入可用的JSON文件列表
   useEffect(() => {
@@ -32,12 +33,45 @@ export default function PreviewPage() {
         const data = await response.json();
         setJsonFiles(data.files || []);
       } catch (err) {
-        setError(`載入JSON文件列表失敗: ${err.message}`);
+        handleError(`載入JSON文件列表失敗: ${err.message}`);
       }
     }
 
     fetchJsonFiles();
+    
+    // 清理函數
+    return () => {
+      if (errorTimeoutRef.current) {
+        clearTimeout(errorTimeoutRef.current);
+      }
+    };
   }, []);
+
+  // 處理錯誤顯示，自動在5秒後清除非嚴重錯誤
+  const handleError = (message) => {
+    if (!message) {
+      setError('');
+      return;
+    }
+    
+    setError(message);
+    
+    // 清除先前的超時
+    if (errorTimeoutRef.current) {
+      clearTimeout(errorTimeoutRef.current);
+    }
+    
+    // 檢查是否為嚴重錯誤（載入失敗、初始化失敗等），只自動清除非嚴重錯誤
+    const isCriticalError = message.includes('載入失敗') || 
+                           message.includes('初始化') || 
+                           message.includes('HTTP錯誤');
+    
+    if (!isCriticalError) {
+      errorTimeoutRef.current = setTimeout(() => {
+        setError('');
+      }, 5000);
+    }
+  };
 
   // 處理點擊下拉選單外部關閉下拉選單
   useEffect(() => {
@@ -65,8 +99,9 @@ export default function PreviewPage() {
         // 驗證這是有效的JSON
         JSON.parse(content);
         setJsonInput(content);
+        setError(''); // 清除錯誤
       } catch (err) {
-        setError(`無效的JSON文件: ${err.message}`);
+        handleError(`無效的JSON文件: ${err.message}`);
       }
     };
     reader.readAsText(file);
@@ -76,6 +111,7 @@ export default function PreviewPage() {
   const handleLoadJsonFile = async (filePath) => {
     try {
       setIsLoading(true);
+      setError(''); // 清除錯誤
       
       const response = await fetch(`/api/load-json-file?filePath=${encodeURIComponent(filePath)}`);
       
@@ -88,12 +124,12 @@ export default function PreviewPage() {
       if (data.content) {
         setJsonInput(data.content);
       } else if (data.error) {
-        setError(`載入JSON錯誤: ${data.error}`);
+        handleError(`載入JSON錯誤: ${data.error}`);
       }
       
       setIsDropdownOpen(false);
     } catch (err) {
-      setError(`載入JSON文件失敗: ${err.message}`);
+      handleError(`載入JSON文件失敗: ${err.message}`);
     } finally {
       setIsLoading(false);
     }
@@ -130,6 +166,7 @@ export default function PreviewPage() {
     };
     
     setJsonInput(JSON.stringify(exampleJson, null, 2));
+    setError(''); // 清除錯誤
   };
 
   return (
@@ -198,7 +235,7 @@ export default function PreviewPage() {
             <PreviewComponent
               jsonInput={jsonInput}
               filePath={router.query.file}
-              onError={(errorMessage) => setError(errorMessage)}
+              onError={handleError}
               onLoadingChange={(loading) => setIsLoading(loading)}
             />
             

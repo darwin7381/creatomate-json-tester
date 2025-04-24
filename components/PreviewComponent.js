@@ -5,6 +5,8 @@ export default function PreviewComponent({ jsonInput, filePath, onError, onLoadi
   const containerRef = useRef(null);
   const previewRef = useRef(null);
   const [isInitialized, setIsInitialized] = useState(false);
+  const debounceTimeoutRef = useRef(null);
+  const previousJsonInputRef = useRef('');
 
   // 初始化預覽SDK
   useEffect(() => {
@@ -46,7 +48,14 @@ export default function PreviewComponent({ jsonInput, filePath, onError, onLoadi
 
         preview.onError = (err) => {
           console.error('預覽SDK錯誤:', err);
-          if (onError) onError(`預覽SDK錯誤: ${err}`);
+          if (onError) {
+            // 如果是CORS錯誤或視頻載入錯誤，提供更友好的錯誤信息
+            if (err.includes('CORS') || err.includes('video') || err.includes('load')) {
+              onError('視頻資源載入錯誤: 請確保視頻URL正確且允許跨域訪問');
+            } else {
+              onError(`預覽SDK錯誤: ${err}`);
+            }
+          }
           if (onLoadingChange) onLoadingChange(false);
         };
 
@@ -74,8 +83,11 @@ export default function PreviewComponent({ jsonInput, filePath, onError, onLoadi
         previewRef.current.dispose();
         previewRef.current = null;
       }
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
+      }
     };
-  }, [containerRef.current]);
+  }, []);
 
   // 處理從文件加載的JSON
   useEffect(() => {
@@ -114,24 +126,50 @@ export default function PreviewComponent({ jsonInput, filePath, onError, onLoadi
     loadJsonFile();
   }, [filePath, isInitialized]);
 
-  // 處理JSON輸入更新
+  // 使用防抖處理JSON輸入更新
   useEffect(() => {
-    const updatePreview = async () => {
-      if (!previewRef.current || !isInitialized || !jsonInput) return;
-
+    if (!isInitialized || !jsonInput) return;
+    
+    // 避免處理相同的輸入
+    if (jsonInput === previousJsonInputRef.current) return;
+    previousJsonInputRef.current = jsonInput;
+    
+    // 清除現有的超時
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current);
+    }
+    
+    // 使用防抖處理更新，等待用戶停止輸入500毫秒後再處理
+    debounceTimeoutRef.current = setTimeout(async () => {
       try {
         if (onLoadingChange) onLoadingChange(true);
-        const jsonSource = JSON.parse(jsonInput);
-        await previewRef.current.setSource(jsonSource);
+        if (onError) onError(''); // 清除先前的錯誤
+        
+        try {
+          // 檢查是否為有效的JSON
+          const jsonSource = JSON.parse(jsonInput);
+          
+          // 確保JSON包含必要的元素
+          if (!jsonSource.elements || !Array.isArray(jsonSource.elements)) {
+            if (onError) onError('JSON缺少elements數組或格式不正確');
+            return;
+          }
+          
+          await previewRef.current.setSource(jsonSource);
+        } catch (parseError) {
+          // 如果是JSON解析錯誤，提供友好的錯誤訊息但不阻止其他操作
+          console.error('JSON解析錯誤:', parseError);
+          if (onError) onError(`JSON格式錯誤: ${parseError.message}`);
+          // 不要在這裡返回，讓用戶繼續編輯
+        }
       } catch (err) {
         console.error('應用JSON時出錯:', err);
-        if (onError) onError(`JSON解析錯誤: ${err.message}`);
+        if (onError) onError(`應用JSON時出錯: ${err.message}`);
       } finally {
         if (onLoadingChange) onLoadingChange(false);
       }
-    };
-
-    updatePreview();
+    }, 500);
+    
   }, [jsonInput, isInitialized]);
 
   return <div ref={containerRef} style={{ width: '100%', height: '100%' }}></div>;
